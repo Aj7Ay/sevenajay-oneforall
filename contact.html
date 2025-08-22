@@ -219,21 +219,26 @@
 
     <script src="script.js"></script>
     
+    <!-- EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
     <script>
-        // AWS Lambda Contact Form Handler
-        // Lambda Function URL for contact form processing
-        const LAMBDA_URL = 'https://ywpdaqpo2vrdn7h6iwwf5gi7se0pxxgt.lambda-url.ap-south-1.on.aws/';
+        // Initialize EmailJS
+        (function() {
+            emailjs.init("y-ibNapzf5v6lynSt");
+        })();
         
+        // Contact form handling with EmailJS
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('AWS Lambda contact form script loaded!');
+            console.log('EmailJS contact form script loaded!');
             
             const contactForm = document.getElementById('contactForm');
             if (contactForm) {
                 console.log('Contact form found!');
                 
-                contactForm.addEventListener('submit', async function(e) {
+                contactForm.addEventListener('submit', function(e) {
                     e.preventDefault();
-                    console.log('Form submitted to AWS Lambda!');
+                    console.log('Form submitted to EmailJS!');
 
                     const submitBtn = this.querySelector('.submit-btn');
                     const btnText = submitBtn.querySelector('.btn-text');
@@ -263,67 +268,58 @@
 
                     console.log('Form data collected:', formDataObj);
                     
-                    try {
-                        console.log('Sending request to Lambda:', LAMBDA_URL);
+                    // Use EmailJS - Simple and reliable
+                    emailjs.send('service_xsylqir', 'template_atbq55v', {
+                        to_name: 'Ajay',
+                        from_name: formDataObj.name,
+                        from_email: formDataObj.email,
+                        subject: formDataObj.subject,
+                        message: formDataObj.message,
+                        phone: formDataObj.phone,
+                        company: formDataObj.company,
+                        priority: formDataObj.priority,
+                        preferred_contact: formDataObj.preferred_contact,
+                        newsletter: formDataObj.newsletter,
+                        follow_up: formDataObj.follow_up
+                    })
+                    .then(function(response) {
+                        console.log('EmailJS SUCCESS:', response);
                         
-                        // Send to AWS Lambda with bulletproof CORS handling
-                        const response = await fetch(LAMBDA_URL, {
-                            method: 'POST',
-                            mode: 'cors',
-                            credentials: 'omit',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify(formDataObj)
-                        });
+                        // Show success message
+                        showFormMessage('✅ Success! I\'ll reach out within 12 hours.', 'success');
                         
-                        console.log('Response status:', response.status);
-                        console.log('Response headers:', response.headers);
+                        // Reset form
+                        contactForm.reset();
+                        console.log('Form reset complete');
                         
-                        // Check if response has content
-                        const responseText = await response.text();
-                        console.log('Response text:', responseText);
+                        // Log final confirmation
+                        console.log('📧 Email sent successfully to: ajay@mrcloudbook.com');
+                        console.log('📝 Message content:', formDataObj.message);
+                        console.log('👤 From:', formDataObj.name, '(', formDataObj.email, ')');
                         
-                        let result;
-                        try {
-                            result = JSON.parse(responseText);
-                        } catch (parseError) {
-                            console.error('Failed to parse response:', parseError);
-                            result = { error: 'Invalid response from server' };
-                        }
-                        
-                        console.log('Parsed result:', result);
-                        
-                        if (response.ok && result.message) {
-                            showFormMessage('✅ Message sent successfully! I\'ll reach out within 24 hours.', 'success');
-                            contactForm.reset();
-                            console.log('Form reset complete');
-                            
-                            // Log successful submission
-                            console.log('📧 Message sent successfully via AWS Lambda');
-                            console.log('📝 Message content:', formDataObj.message);
-                            console.log('👤 From:', formDataObj.name, '(', formDataObj.email, ')');
-                        } else {
-                            const errorMsg = result.error || `Server error: ${response.status}`;
-                            showFormMessage(`❌ ${errorMsg}`, 'error');
-                            console.error('Lambda error:', errorMsg);
-                        }
-                        
-                    } catch (error) {
-                        console.error('AWS Lambda submission error:', error);
-                        showFormMessage('❌ Network error. Please check your connection and try again.', 'error');
-                    } finally {
                         // Reset button state
                         submitBtn.classList.remove('loading');
                         submitBtn.disabled = false;
                         btnText.style.display = 'inline';
                         btnLoading.style.display = 'none';
                         console.log('Button state reset');
-                    }
+                    })
+                    .catch(function(error) {
+                        console.error('EmailJS ERROR:', error);
+                        
+                        // Show error message
+                        showFormMessage('❌ Failed to send message. Please try again.', 'error');
+                        
+                        // Reset button state
+                        submitBtn.classList.remove('loading');
+                        submitBtn.disabled = false;
+                        btnText.style.display = 'inline';
+                        btnLoading.style.display = 'none';
+                        console.log('Button state reset');
+                    });
                 });
                 
-                console.log('AWS Lambda form event listener attached successfully');
+                console.log('EmailJS form event listener attached successfully');
             } else {
                 console.error('Contact form not found!');
             }
@@ -351,18 +347,17 @@
                 console.log('Message inserted into DOM');
             }
             
-            // Auto-remove after 10 seconds
+            // Auto-remove after 8 seconds
             setTimeout(() => {
                 if (messageDiv.parentNode) {
                     messageDiv.remove();
                     console.log('Message auto-removed');
                 }
-            }, 10000);
+            }, 8000);
         }
         
         // Additional debugging
-        console.log('AWS Lambda contact page script loaded at:', new Date().toISOString());
-        console.log('⚠️ Remember to replace LAMBDA_URL with your actual Lambda Function URL');
+        console.log('EmailJS contact page script loaded at:', new Date().toISOString());
     </script>
 </body>
 </html> 
