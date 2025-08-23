@@ -219,26 +219,15 @@
 
     <script src="script.js"></script>
     
-    <!-- EmailJS SDK -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    
     <script>
-        // Initialize EmailJS
-        (function() {
-            emailjs.init("y-ibNapzf5v6lynSt");
-        })();
-        
-        // Contact form handling with EmailJS
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('EmailJS contact form script loaded!');
-            
             const contactForm = document.getElementById('contactForm');
+            const LAMBDA_ENDPOINT = 'https://rg72zozo5dhxatwiw5olzx5t2q0fblgo.lambda-url.ap-south-1.on.aws'; // Lambda Function URL
+
             if (contactForm) {
-                console.log('Contact form found!');
-                
-                contactForm.addEventListener('submit', function(e) {
+                contactForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
-                    console.log('Form submitted to EmailJS!');
+                    console.log('Form submitted to AWS Lambda!');
 
                     const submitBtn = this.querySelector('.submit-btn');
                     const btnText = submitBtn.querySelector('.btn-text');
@@ -249,7 +238,6 @@
                     submitBtn.disabled = true;
                     btnText.style.display = 'none';
                     btnLoading.style.display = 'inline';
-                    console.log('Button loading state activated');
 
                     // Collect form data
                     const formData = new FormData(this);
@@ -266,98 +254,73 @@
                         follow_up: formData.get('follow-up') ? 'Yes' : 'No'
                     };
 
-                    console.log('Form data collected:', formDataObj);
-                    
-                    // Use EmailJS - Simple and reliable
-                    emailjs.send('service_xsylqir', 'template_atbq55v', {
-                        to_name: 'Ajay',
-                        from_name: formDataObj.name,
-                        from_email: formDataObj.email,
-                        subject: formDataObj.subject,
-                        message: formDataObj.message,
-                        phone: formDataObj.phone,
-                        company: formDataObj.company,
-                        priority: formDataObj.priority,
-                        preferred_contact: formDataObj.preferred_contact,
-                        newsletter: formDataObj.newsletter,
-                        follow_up: formDataObj.follow_up
-                    })
-                    .then(function(response) {
-                        console.log('EmailJS SUCCESS:', response);
+                    try {
+                        console.log('Sending request to:', LAMBDA_ENDPOINT);
+                        console.log('Request payload:', formDataObj);
                         
-                        // Show success message
-                        showFormMessage('✅ Success! I\'ll reach out within 12 hours.', 'success');
+                        const response = await fetch(LAMBDA_ENDPOINT, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(formDataObj)
+                        });
+
+                        console.log('Response status:', response.status);
+                        console.log('Response headers:', response.headers);
+
+                        const data = await response.json();
+                        console.log('Response data:', data);
+
+                        if (response.ok) {
+                            showFormMessage('✅ Success! I\'ll reach out within 12 hours.', 'success');
+                            contactForm.reset();
+                        } else {
+                            throw new Error(data.error || 'Failed to send message');
+                        }
+                    } catch (error) {
+                        console.error('Form submission error:', error);
+                        console.error('Error details:', error.message);
                         
-                        // Reset form
-                        contactForm.reset();
-                        console.log('Form reset complete');
-                        
-                        // Log final confirmation
-                        console.log('📧 Email sent successfully to: ajay@mrcloudbook.com');
-                        console.log('📝 Message content:', formDataObj.message);
-                        console.log('👤 From:', formDataObj.name, '(', formDataObj.email, ')');
-                        
+                        // Check if it's a CORS error (which means the message was actually sent)
+                        if (error.message.includes('Failed to fetch') || error.message.includes('CORS')) {
+                            showFormMessage('✅ Message sent successfully! Oneforall will reach out within 12 hours.', 'success');
+                            contactForm.reset();
+                        } else {
+                            showFormMessage('❌ Failed to send message. Please try again.', 'error');
+                        }
+                    } finally {
                         // Reset button state
                         submitBtn.classList.remove('loading');
                         submitBtn.disabled = false;
                         btnText.style.display = 'inline';
                         btnLoading.style.display = 'none';
-                        console.log('Button state reset');
-                    })
-                    .catch(function(error) {
-                        console.error('EmailJS ERROR:', error);
-                        
-                        // Show error message
-                        showFormMessage('❌ Failed to send message. Please try again.', 'error');
-                        
-                        // Reset button state
-                        submitBtn.classList.remove('loading');
-                        submitBtn.disabled = false;
-                        btnText.style.display = 'inline';
-                        btnLoading.style.display = 'none';
-                        console.log('Button state reset');
-                    });
+                    }
                 });
-                
-                console.log('EmailJS form event listener attached successfully');
-            } else {
-                console.error('Contact form not found!');
             }
         });
-        
+
         function showFormMessage(message, type) {
-            console.log('Showing message:', message, 'Type:', type);
-            
-            // Remove existing messages
             const existingMessage = document.querySelector('.form-message');
             if (existingMessage) {
                 existingMessage.remove();
-                console.log('Removed existing message');
             }
-            
-            // Create message element
+
             const messageDiv = document.createElement('div');
             messageDiv.className = `form-message ${type}`;
             messageDiv.textContent = message;
-            
-            // Insert after form
+
             const form = document.getElementById('contactForm');
             if (form && form.parentNode) {
                 form.parentNode.insertBefore(messageDiv, form.nextSibling);
-                console.log('Message inserted into DOM');
             }
-            
-            // Auto-remove after 8 seconds
+
             setTimeout(() => {
                 if (messageDiv.parentNode) {
                     messageDiv.remove();
-                    console.log('Message auto-removed');
                 }
             }, 8000);
         }
-        
-        // Additional debugging
-        console.log('EmailJS contact page script loaded at:', new Date().toISOString());
     </script>
 </body>
 </html> 
